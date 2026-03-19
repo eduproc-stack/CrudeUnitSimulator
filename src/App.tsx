@@ -9,7 +9,6 @@ import {
   Tooltip,
   Legend,
 } from 'recharts';
-import './styles.css';
 
 const COLORS = ['#2c7be5', '#d94f45', '#6fbf73', '#8a63d2', '#2ca7c9'];
 const REFERENCE_INPUTS = { fr1: 15, fr2: 15, fr3: 15, fr4: 15, fractionation: 7 };
@@ -24,16 +23,175 @@ const OFFSET_TEMPLATE_FR1_TO_FR4 = [-6, -4.55, -3, -2, -1, -0.4, 0, 0.5, 0.65, 0
 const OFFSET_TEMPLATE_FR5 = [-6, -4.55, -3, -2, -1, -0.4, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 const TABULAR_POINTS = [0, 2, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 98, 100];
 
-function crudeTemp(volPct: number) {
+const styles = {
+  page: {
+    minHeight: '100vh',
+    background: '#edf3f8',
+    padding: '24px',
+    fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif',
+    color: '#10233f',
+  },
+  shell: {
+    maxWidth: '1400px',
+    margin: '0 auto',
+    display: 'grid',
+    gap: '24px',
+  },
+  hero: {
+    background: '#ffffff',
+    border: '1px solid #dbe4ef',
+    borderRadius: '28px',
+    boxShadow: '0 12px 32px rgba(16, 35, 63, 0.08)',
+    padding: '28px 32px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: '20px',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+  },
+  mainGrid: {
+    display: 'grid',
+    gridTemplateColumns: '340px minmax(0, 1fr)',
+    gap: '24px',
+    alignItems: 'start',
+  },
+  card: {
+    background: '#ffffff',
+    border: '1px solid #dbe4ef',
+    borderRadius: '28px',
+    boxShadow: '0 12px 32px rgba(16, 35, 63, 0.08)',
+    padding: '28px',
+  },
+  stickyCard: {
+    position: 'sticky',
+    top: '20px',
+  },
+  sectionStack: {
+    display: 'grid',
+    gap: '24px',
+  },
+  chartGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gap: '24px',
+  },
+  chartBox: {
+    width: '100%',
+    height: '380px',
+  },
+  h1: {
+    margin: '0 0 10px',
+    fontSize: '34px',
+    lineHeight: 1.1,
+    fontWeight: 800,
+    color: '#10233f',
+  },
+  h2: {
+    margin: 0,
+    fontSize: '20px',
+    fontWeight: 800,
+    color: '#10233f',
+  },
+  h3: {
+    margin: '30px 0 0',
+    fontSize: '18px',
+    fontWeight: 800,
+    color: '#10233f',
+  },
+  label: {
+    marginBottom: '8px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontSize: '15px',
+    fontWeight: 700,
+    color: '#42536d',
+  },
+  muted: {
+    margin: '8px 0 0',
+    color: '#60738f',
+    lineHeight: 1.5,
+    fontSize: '15px',
+  },
+  eyebrow: {
+    margin: '0 0 12px',
+    fontSize: '12px',
+    fontWeight: 800,
+    textTransform: 'uppercase',
+    letterSpacing: '0.18em',
+    color: '#2c7be5',
+  },
+  button: {
+    borderRadius: '999px',
+    border: '1px solid #cad6e3',
+    background: '#ffffff',
+    color: '#33445f',
+    padding: '12px 18px',
+    fontWeight: 700,
+    cursor: 'pointer',
+    boxShadow: '0 4px 12px rgba(16, 35, 63, 0.06)',
+  },
+  balance: {
+    marginTop: '24px',
+    borderRadius: '22px',
+    border: '1px solid #b6d0fb',
+    background: '#edf5ff',
+    padding: '18px 20px',
+  },
+  balanceGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr auto',
+    gap: '10px 20px',
+    color: '#42536d',
+    fontSize: '15px',
+  },
+  tableWrap: {
+    overflowX: 'auto',
+    marginTop: '18px',
+  },
+  table: {
+    width: '100%',
+    borderCollapse: 'collapse',
+    fontSize: '15px',
+  },
+  th: {
+    textAlign: 'left',
+    background: '#f4f7fb',
+    color: '#42536d',
+    padding: '14px 14px',
+    borderBottom: '1px solid #dbe4ef',
+    whiteSpace: 'nowrap',
+  },
+  td: {
+    padding: '14px 14px',
+    borderBottom: '1px solid #e7edf5',
+    whiteSpace: 'nowrap',
+  },
+  tdRight: {
+    textAlign: 'right',
+  },
+  chartHeading: {
+    margin: '0 0 6px',
+    fontSize: '18px',
+    fontWeight: 800,
+    color: '#10233f',
+  },
+  helper: {
+    margin: 0,
+    fontSize: '15px',
+    color: '#60738f',
+  },
+};
+
+function crudeTemp(volPct) {
   return POLY.reduce((sum, coefficient, index) => sum + coefficient * volPct ** index, 0);
 }
 
-function viscosity(tempC: number) {
+function viscosity(tempC) {
   const exponent = VISC_POLY.reduce((sum, coefficient, index) => sum + coefficient * tempC ** index, 0);
   return Math.exp(exponent);
 }
 
-function interpolate(xValues: number[], yValues: number[], x: number) {
+function interpolate(xValues, yValues, x) {
   if (x <= xValues[0]) return yValues[0];
   if (x >= xValues[xValues.length - 1]) return yValues[yValues.length - 1];
   for (let i = 0; i < xValues.length - 1; i += 1) {
@@ -49,12 +207,12 @@ function interpolate(xValues: number[], yValues: number[], x: number) {
   return yValues[yValues.length - 1];
 }
 
-function round(value: number, digits = 1) {
+function round(value, digits = 1) {
   const factor = 10 ** digits;
   return Math.round(value * factor) / factor;
 }
 
-function normalizeYields(fr1: number, fr2: number, fr3: number, fr4: number) {
+function normalizeYields(fr1, fr2, fr3, fr4) {
   const safe = [fr1, fr2, fr3, fr4].map((value) => Math.max(0, Math.min(100, value)));
   const total = safe.reduce((sum, value) => sum + value, 0);
   if (total <= 100) return [...safe, 100 - total];
@@ -63,19 +221,7 @@ function normalizeYields(fr1: number, fr2: number, fr3: number, fr4: number) {
   return [...scaled, 0];
 }
 
-type CurvePoint = { overallVolPct: number; tempC: number };
-type LocalCurvePoint = { localVolPct: number; tempC: number };
-type Fraction = {
-  name: string;
-  yieldPct: number;
-  flashpointC: number;
-  viscosityCst: number;
-  localCurve: LocalCurvePoint[];
-  overallCurve: CurvePoint[];
-  overlapC?: number;
-};
-
-function simulate(yields: number[], fractionationNumber: number) {
+function simulate(yields, fractionationNumber) {
   const clampedFractionation = Math.max(0, Math.min(15, fractionationNumber));
   const starts = [0];
   yields.slice(0, -1).forEach((yieldPct) => {
@@ -89,7 +235,7 @@ function simulate(yields: number[], fractionationNumber: number) {
 
   const fractionOffsetBase = clampedFractionation * 0.8;
 
-  const fractions: Fraction[] = yields.map((yieldPct, index) => {
+  const fractions = yields.map((yieldPct, index) => {
     const offsetTemplate = index < 4 ? OFFSET_TEMPLATE_FR1_TO_FR4 : OFFSET_TEMPLATE_FR5;
     const offsetMagnitude = OFFSET_MULTIPLIERS[index] * fractionOffsetBase;
 
@@ -128,7 +274,7 @@ function simulate(yields: number[], fractionationNumber: number) {
   }
 
   const tabularRows = TABULAR_POINTS.map((point) => {
-    const row: Record<string, number> = { localVolPct: point };
+    const row = { localVolPct: point };
     fractions.forEach((fraction) => {
       row[fraction.name] = fraction.localCurve[point].tempC;
     });
@@ -138,35 +284,24 @@ function simulate(yields: number[], fractionationNumber: number) {
   return { fractionationNumber: clampedFractionation, fractions, crudeCurve, tabularRows };
 }
 
-function formatOneDecimal(value: number) {
+function formatOneDecimal(value) {
   return round(value, 1).toFixed(1);
 }
 
-function formatTwoDecimals(value: number | string) {
-  const numericValue = typeof value === 'number' ? value : Number(value);
-  return round(numericValue, 2).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function formatTwoDecimals(value) {
+  return round(Number(value), 2).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function formatViscosity(value: number) {
+function formatViscosity(value) {
   if (!Number.isFinite(value) || value > 10000) return '∞';
   if (value >= 1000) return round(value, 0).toLocaleString();
   return round(value, 2).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-type SliderProps = {
-  label: string;
-  value: string | number;
-  setValue: (value: number) => void;
-  min: number;
-  max: number;
-  step: number;
-  suffix?: string;
-};
-
-function Slider({ label, value, setValue, min, max, step, suffix = '' }: SliderProps) {
+function Slider({ label, value, setValue, min, max, step, suffix = '' }) {
   return (
-    <div className="mb-5">
-      <div className="mb-2 flex items-center justify-between text-sm font-semibold text-slate-700">
+    <div style={{ marginBottom: '22px' }}>
+      <div style={styles.label}>
         <label>{label}</label>
         <span>{value}{suffix}</span>
       </div>
@@ -175,15 +310,20 @@ function Slider({ label, value, setValue, min, max, step, suffix = '' }: SliderP
         min={min}
         max={max}
         step={step}
-        value={typeof value === 'string' ? Number(value) : value}
+        value={Number(value)}
         onChange={(e) => setValue(Number(e.target.value))}
-        className="w-full"
+        style={{ width: '100%', accentColor: '#1976d2', cursor: 'pointer' }}
       />
     </div>
   );
 }
 
-export default function App() {
+function Cell({ children, right = false, header = false }) {
+  const baseStyle = header ? styles.th : styles.td;
+  return <td style={{ ...baseStyle, ...(right ? styles.tdRight : {}) }}>{children}</td>;
+}
+
+export default function CrudeSimulatorLiveDemo() {
   const [fr1, setFr1] = useState(REFERENCE_INPUTS.fr1);
   const [fr2, setFr2] = useState(REFERENCE_INPUTS.fr2);
   const [fr3, setFr3] = useState(REFERENCE_INPUTS.fr3);
@@ -196,7 +336,7 @@ export default function App() {
 
   const superimposedData = useMemo(() => {
     return result.crudeCurve.map((point) => {
-      const row: Record<string, number | null> = { overallVolPct: point.overallVolPct, crude: point.tempC };
+      const row = { overallVolPct: point.overallVolPct, crude: point.tempC };
       result.fractions.forEach((fraction) => {
         const xValues = fraction.overallCurve.map((curvePoint) => curvePoint.overallVolPct);
         const yValues = fraction.overallCurve.map((curvePoint) => curvePoint.tempC);
@@ -212,7 +352,7 @@ export default function App() {
 
   const individualData = useMemo(() => {
     return Array.from({ length: 101 }, (_, localVolPct) => {
-      const row: Record<string, number> = { localVolPct };
+      const row = { localVolPct };
       result.fractions.forEach((fraction) => {
         row[fraction.name] = fraction.localCurve[localVolPct].tempC;
       });
@@ -223,34 +363,32 @@ export default function App() {
   const totalInput = fr1 + fr2 + fr3 + fr4;
 
   return (
-    <div className="min-h-screen bg-slate-100 p-4 md:p-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-            <div>
-              <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-blue-600">Live preview</p>
-              <h1 className="text-3xl font-bold text-slate-900">EduProc Crude Oil Distillation Simulator</h1>
-              <p className="mt-3 max-w-3xl text-slate-600">
-                Interactive browser demo. Adjust FR1–FR4 and the fractionation number to update the quality tables and distillation curves instantly.
-              </p>
-            </div>
-            <button
-              onClick={() => {
-                setFr1(15); setFr2(15); setFr3(15); setFr4(15); setFractionation(7);
-              }}
-              className="rounded-full border border-slate-300 px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-50"
-            >
-              Reset to reference case
-            </button>
+    <div style={styles.page}>
+      <div style={styles.shell}>
+        <div style={styles.hero}>
+          <div>
+            <p style={styles.eyebrow}>Live preview</p>
+            <h1 style={styles.h1}>EduProc Crude Oil Distillation Simulator</h1>
+            <p style={{ ...styles.muted, maxWidth: '850px', marginTop: '12px' }}>
+              Interactive browser demo. Adjust FR1–FR4 and the fractionation number to update the quality tables and distillation curves instantly.
+            </p>
           </div>
+          <button
+            onClick={() => {
+              setFr1(15); setFr2(15); setFr3(15); setFr4(15); setFractionation(7);
+            }}
+            style={styles.button}
+          >
+            Reset to reference case
+          </button>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm lg:sticky lg:top-4 lg:self-start">
-            <h2 className="text-xl font-semibold text-slate-900">Inputs</h2>
-            <p className="mt-1 text-sm text-slate-500">FR5 is automatically calculated as the balance to 100%.</p>
+        <div style={styles.mainGrid}>
+          <div style={{ ...styles.card, ...styles.stickyCard }}>
+            <h2 style={styles.h2}>Inputs</h2>
+            <p style={styles.muted}>FR5 is automatically calculated as the balance to 100%.</p>
 
-            <div className="mt-6">
+            <div style={{ marginTop: '28px' }}>
               <Slider label="FR1 yield" value={formatOneDecimal(fr1)} setValue={setFr1} min={0} max={60} step={0.5} suffix="%" />
               <Slider label="FR2 yield" value={formatOneDecimal(fr2)} setValue={setFr2} min={0} max={60} step={0.5} suffix="%" />
               <Slider label="FR3 yield" value={formatOneDecimal(fr3)} setValue={setFr3} min={0} max={60} step={0.5} suffix="%" />
@@ -258,66 +396,68 @@ export default function App() {
               <Slider label="Fractionation number" value={fractionation} setValue={setFractionation} min={0} max={15} step={1} />
             </div>
 
-            <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm">
-              <div className="mb-2 font-semibold text-slate-900">Yield balance</div>
-              <div className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-slate-700">
+            <div style={styles.balance}>
+              <div style={{ marginBottom: '12px', fontWeight: 800, color: '#10233f' }}>Yield balance</div>
+              <div style={styles.balanceGrid}>
                 <span>FR1–FR4 input sum</span><span>{formatOneDecimal(totalInput)}%</span>
                 <span>FR5 balance</span><span>{formatOneDecimal(yields[4])}%</span>
               </div>
               {totalInput > 100 && (
-                <p className="mt-3 text-amber-700">FR1–FR4 exceeds 100%, so the app scales them proportionally and sets FR5 to 0%.</p>
+                <p style={{ margin: '14px 0 0', color: '#9a5b00', lineHeight: 1.5 }}>
+                  FR1–FR4 exceeds 100%, so the app scales them proportionally and sets FR5 to 0%.
+                </p>
               )}
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-slate-900">Current qualities</h2>
-              <div className="mt-4 overflow-x-auto">
-                <table className="min-w-full border-collapse text-sm">
+          <div style={styles.sectionStack}>
+            <div style={styles.card}>
+              <h2 style={styles.h2}>Current qualities</h2>
+              <div style={styles.tableWrap}>
+                <table style={styles.table}>
                   <thead>
-                    <tr className="bg-slate-50 text-slate-700">
-                      <th className="border-b border-slate-200 px-3 py-3 text-left">Fraction</th>
-                      <th className="border-b border-slate-200 px-3 py-3 text-right">Yield (%)</th>
-                      <th className="border-b border-slate-200 px-3 py-3 text-right">Flashpoint (°C)</th>
-                      <th className="border-b border-slate-200 px-3 py-3 text-right">Viscosity (cSt)</th>
-                      <th className="border-b border-slate-200 px-3 py-3 text-right">Overlap 10–90% (°C)</th>
+                    <tr>
+                      <Cell header>Fraction</Cell>
+                      <Cell header right>Yield (%)</Cell>
+                      <Cell header right>Flashpoint (°C)</Cell>
+                      <Cell header right>Viscosity (cSt)</Cell>
+                      <Cell header right>Overlap 10–90% (°C)</Cell>
                     </tr>
                   </thead>
                   <tbody>
                     {result.fractions.map((fraction) => (
-                      <tr key={fraction.name} className="hover:bg-slate-50">
-                        <td className="border-b border-slate-100 px-3 py-3 text-left font-medium">{fraction.name}</td>
-                        <td className="border-b border-slate-100 px-3 py-3 text-right">{formatOneDecimal(fraction.yieldPct)}</td>
-                        <td className="border-b border-slate-100 px-3 py-3 text-right">{formatOneDecimal(fraction.flashpointC)}</td>
-                        <td className="border-b border-slate-100 px-3 py-3 text-right">{formatViscosity(fraction.viscosityCst)}</td>
-                        <td className="border-b border-slate-100 px-3 py-3 text-right">{fraction.overlapC == null ? '-' : formatOneDecimal(fraction.overlapC)}</td>
+                      <tr key={fraction.name}>
+                        <Cell><strong>{fraction.name}</strong></Cell>
+                        <Cell right>{formatOneDecimal(fraction.yieldPct)}</Cell>
+                        <Cell right>{formatOneDecimal(fraction.flashpointC)}</Cell>
+                        <Cell right>{formatViscosity(fraction.viscosityCst)}</Cell>
+                        <Cell right>{fraction.overlapC == null ? '-' : formatOneDecimal(fraction.overlapC)}</Cell>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
 
-              <h3 className="mt-8 text-lg font-semibold text-slate-900">Reference case</h3>
-              <div className="mt-4 overflow-x-auto">
-                <table className="min-w-full border-collapse text-sm">
+              <h3 style={styles.h3}>Reference case</h3>
+              <div style={styles.tableWrap}>
+                <table style={styles.table}>
                   <thead>
-                    <tr className="bg-slate-50 text-slate-700">
-                      <th className="border-b border-slate-200 px-3 py-3 text-left">Fraction</th>
-                      <th className="border-b border-slate-200 px-3 py-3 text-right">Yield (%)</th>
-                      <th className="border-b border-slate-200 px-3 py-3 text-right">Flashpoint (°C)</th>
-                      <th className="border-b border-slate-200 px-3 py-3 text-right">Viscosity (cSt)</th>
-                      <th className="border-b border-slate-200 px-3 py-3 text-right">Overlap 10–90% (°C)</th>
+                    <tr>
+                      <Cell header>Fraction</Cell>
+                      <Cell header right>Yield (%)</Cell>
+                      <Cell header right>Flashpoint (°C)</Cell>
+                      <Cell header right>Viscosity (cSt)</Cell>
+                      <Cell header right>Overlap 10–90% (°C)</Cell>
                     </tr>
                   </thead>
                   <tbody>
                     {reference.fractions.map((fraction) => (
-                      <tr key={fraction.name} className="hover:bg-slate-50">
-                        <td className="border-b border-slate-100 px-3 py-3 text-left font-medium">{fraction.name}</td>
-                        <td className="border-b border-slate-100 px-3 py-3 text-right">{formatOneDecimal(fraction.yieldPct)}</td>
-                        <td className="border-b border-slate-100 px-3 py-3 text-right">{formatOneDecimal(fraction.flashpointC)}</td>
-                        <td className="border-b border-slate-100 px-3 py-3 text-right">{formatViscosity(fraction.viscosityCst)}</td>
-                        <td className="border-b border-slate-100 px-3 py-3 text-right">{fraction.overlapC == null ? '-' : formatOneDecimal(fraction.overlapC)}</td>
+                      <tr key={fraction.name}>
+                        <Cell><strong>{fraction.name}</strong></Cell>
+                        <Cell right>{formatOneDecimal(fraction.yieldPct)}</Cell>
+                        <Cell right>{formatOneDecimal(fraction.flashpointC)}</Cell>
+                        <Cell right>{formatViscosity(fraction.viscosityCst)}</Cell>
+                        <Cell right>{fraction.overlapC == null ? '-' : formatOneDecimal(fraction.overlapC)}</Cell>
                       </tr>
                     ))}
                   </tbody>
@@ -325,13 +465,13 @@ export default function App() {
               </div>
             </div>
 
-            <div className="grid gap-6 xl:grid-cols-2">
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div className="mb-4">
-                  <h2 className="text-lg font-semibold text-slate-900">Distillation curves superimposed on crude oil curve</h2>
-                  <p className="text-sm text-slate-500">Overall crude volume % on x-axis</p>
+            <div style={styles.chartGrid}>
+              <div style={styles.card}>
+                <div style={{ marginBottom: '12px' }}>
+                  <h2 style={styles.chartHeading}>Distillation curves superimposed on crude oil curve</h2>
+                  <p style={styles.helper}>Overall crude volume % on x-axis</p>
                 </div>
-                <div className="h-[360px] w-full">
+                <div style={styles.chartBox}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={superimposedData}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -348,12 +488,12 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div className="mb-4">
-                  <h2 className="text-lg font-semibold text-slate-900">Distillation curves individually displayed</h2>
-                  <p className="text-sm text-slate-500">Local fraction volume % on x-axis</p>
+              <div style={styles.card}>
+                <div style={{ marginBottom: '12px' }}>
+                  <h2 style={styles.chartHeading}>Distillation curves individually displayed</h2>
+                  <p style={styles.helper}>Local fraction volume % on x-axis</p>
                 </div>
-                <div className="h-[360px] w-full">
+                <div style={styles.chartBox}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={individualData}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -370,29 +510,29 @@ export default function App() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="mb-4">
-                <h2 className="text-xl font-semibold text-slate-900">Tabular format</h2>
-                <p className="text-sm text-slate-500">Temperatures by local fraction volume percentage.</p>
+            <div style={styles.card}>
+              <div style={{ marginBottom: '12px' }}>
+                <h2 style={styles.h2}>Tabular format</h2>
+                <p style={styles.helper}>Temperatures by local fraction volume percentage.</p>
               </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full border-collapse text-sm">
+              <div style={styles.tableWrap}>
+                <table style={styles.table}>
                   <thead>
-                    <tr className="bg-slate-50 text-slate-700">
-                      <th className="border-b border-slate-200 px-3 py-3 text-left">Vol %</th>
+                    <tr>
+                      <Cell header>Vol %</Cell>
                       {result.fractions.map((fraction) => (
-                        <th key={fraction.name} className="border-b border-slate-200 px-3 py-3 text-right">{fraction.name}</th>
+                        <Cell key={fraction.name} header right>{fraction.name}</Cell>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {result.tabularRows.map((row) => (
-                      <tr key={row.localVolPct} className="hover:bg-slate-50">
-                        <td className="border-b border-slate-100 px-3 py-3 text-left font-medium">{row.localVolPct}</td>
+                      <tr key={row.localVolPct}>
+                        <Cell><strong>{row.localVolPct}</strong></Cell>
                         {result.fractions.map((fraction) => (
-                          <td key={`${row.localVolPct}-${fraction.name}`} className="border-b border-slate-100 px-3 py-3 text-right">
+                          <Cell key={`${row.localVolPct}-${fraction.name}`} right>
                             {formatOneDecimal(row[fraction.name])}
-                          </td>
+                          </Cell>
                         ))}
                       </tr>
                     ))}
@@ -402,6 +542,19 @@ export default function App() {
             </div>
           </div>
         </div>
+
+        <style>{`
+          @media (max-width: 1180px) {
+            .responsive-chart-grid {
+              grid-template-columns: 1fr;
+            }
+          }
+          @media (max-width: 1080px) {
+            .responsive-main-grid {
+              grid-template-columns: 1fr;
+            }
+          }
+        `}</style>
       </div>
     </div>
   );
